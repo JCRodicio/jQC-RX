@@ -1,0 +1,105 @@
+if(roiManager("count")!=0){
+	roiManager("reset");
+}
+run("Clear Results");
+
+requires("1.32f");
+  title = getTitle;
+  width = getWidth;
+  height = getHeight;
+  depth = nSlices;
+  getPixelSize(unit, pw, ph, pd);
+  path = getDirectory("image");
+  getThreshold(t1, t2); 
+
+
+//meto dimensiones de la ROI y las distancias a los bordes
+	ancho=getNumber("anchura ROI (mm): ", 0);
+	alto=getNumber("altura ROI (mm): ", 0);
+	latIZQ = getNumber("dist. al borde lateral izquierdo (mm): ", 0);
+	latDCH = getNumber("dist. al borde lateral derecho (mm): ", 0);
+	sup = getNumber("dist. al borde superior (mm): ", 0);
+	inf = getNumber("dist. al borde inferior (mm): ", 0);
+	
+	
+
+//dibujo ROIs y las añado al manager
+makeRectangle(latIZQ/pw, sup/pw, width-latIZQ/pw-latDCH/pw, height-sup/ph-inf/ph);
+roiManager("add")
+
+makeRectangle((width-latIZQ/pw-latDCH/pw)/2+latIZQ/pw-ancho/(2*pw), (height-sup/ph-inf/ph)/2+sup/ph-alto/(2*ph), ancho/pw, alto/ph);
+roiManager("add")
+
+
+makeRectangle(latIZQ/pw, sup/ph, ancho/pw, alto/ph);
+roiManager("add")
+
+makeRectangle(width-latDCH/pw-ancho/pw, sup/ph, ancho/pw, alto/ph);
+roiManager("add")
+
+makeRectangle(latIZQ/pw, height-inf/ph-alto/ph, ancho/pw, alto/ph);
+roiManager("add")
+
+makeRectangle(width-latDCH/pw-ancho/pw, height-inf/ph-alto/ph, ancho/pw, alto/ph);
+roiManager("add")
+
+roiManager("Measure");
+
+
+
+
+//hago estadistica de los datos
+	media1 = getResult("Mean", 0);
+	media2 = getResult("Mean", 1);
+	media3 = getResult("Mean", 2);
+	media4 = getResult("Mean", 3);
+	media5 = getResult("Mean", 4);
+	media6 = getResult("Mean", 5);
+
+	RSR1 = getResult("Mean", 0)/getResult("StdDev", 0);
+	RSR2 = getResult("Mean", 1)/getResult("StdDev", 1);
+	RSR3 = getResult("Mean", 2)/getResult("StdDev", 2);
+	RSR4 = getResult("Mean", 3)/getResult("StdDev", 3);
+	RSR5 = getResult("Mean", 4)/getResult("StdDev", 4);
+	RSR6 = getResult("Mean", 5)/getResult("StdDev", 5);
+
+	VMP_medio = (media2 + media3 + media4 + media5 + media6)/5;
+	RSR_medio = (RSR2 + RSR3 + RSR4 + RSR5 + RSR6)/5;
+	desvM_VMP = 0;
+	desvM_VMPcentral = 0;
+	desvM_RSR = 0;
+	for (i=1; i<nResults; i++) {
+   		aux1 = abs(getResult("Mean", i)-media1)*100/media1;
+		aux2 = abs(getResult("Mean", i)/getResult("StdDev", i)-RSR_medio)*100/RSR_medio;
+		if(aux1>desvM_VMP){
+		desvM_VMP = aux1;
+		}
+		if(aux2>desvM_RSR){
+		desvM_RSR = aux2;
+		}
+	}
+	for (i=2; i<nResults; i++)
+	{
+		aux3 = abs(getResult("Mean", i)-media2)*100/media2;
+		//print(aux3);
+		if(aux3>desvM_VMPcentral){
+			desvM_VMPcentral = aux3;
+		}
+	}
+
+//hago tabla con resultados
+ title1 = "Resultado Uniformidad";
+ title2 = "["+title1+"]";
+ f = title2;
+ if (isOpen(title1))
+     print(f, "\\Clear");
+ else
+    run("New... ", "name="+title2+" type=Table width=560 height=250");
+  print(f, "\\Headings:parametro\tvalor");
+  print(f, "promedio de los VMP de las cinco ROI" + "\t" +d2s(VMP_medio,2));
+  print(f, "promedio de la RSR de las cinco ROI" + "\t" +d2s(RSR_medio,2));
+  print(f, "maxima desviación VMP respecto del VMP de imagen recortada (%)" + "\t" +d2s(desvM_VMP,2));
+  print(f, "maxima desviación VMP respecto del VMP de la ROI central (%)" + "\t" +d2s(desvM_VMPcentral,2));
+  print(f, "maxima desviación RSR respecto del promedio (%)" + "\t" +d2s(desvM_RSR,2));
+
+roiManager("Show All");

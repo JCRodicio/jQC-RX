@@ -1,0 +1,194 @@
+if(roiManager("count")!=0){
+	roiManager("reset");
+}
+run("Clear Results");
+
+requires("1.32f");
+  title = getTitle;
+  width = getWidth;
+  height = getHeight;
+  depth = nSlices;
+  getPixelSize(unit, pw, ph, pd);
+  path = getDirectory("image");
+  getThreshold(t1, t2); 
+
+ID_pared = 0;
+
+//busco la posición de la pared costal:
+//ID_pared = 1 --> lateral derecho
+//ID_pared = 2 --> lateral izquierdo
+//ID_pared = 3 --> abajo
+//ID_pared = 4 --> arriba
+
+
+
+//Analizo en una ROI "comprimida" 2cm por cada lado
+makeRectangle(20/pw, 20/ph, width-40/pw, height-40/ph);
+run("Copy");
+
+newImage("Untitled", "16-bit Black", width-40/pw, height-40/ph, 1);
+selectWindow("Untitled");
+run("Paste");
+
+
+run("Set Scale...", "distance=1 known=pw pixel=1 unit=mm");
+run("Invert LUT");
+setAutoThreshold("Default dark");
+run("Convert to Mask");
+
+//hago cuatro ROIs y evaluo valor medio
+makeRectangle(0, height/2-20/(2*ph), 20/pw, 20/ph);
+roiManager("add") //lateral izquierda ==> ID_pared =1
+
+makeRectangle(width-20/pw, height/2-20/(2*ph), 20/pw, 20/ph);
+roiManager("add") //lateral derecha ==> ID_pared =2
+
+makeRectangle(width/2-20/(2*pw), 0, 20/pw, 20/ph);
+roiManager("add") //arriba ==> ID_pared =3
+
+makeRectangle(width/2-20/(2*pw), height-20/ph, 20/pw, 20/ph);
+roiManager("add") //abajo ==> ID_pared =4
+
+roiManager("Measure");
+	media1 = getResult("Mean", 0);
+	media2 = getResult("Mean", 1);
+	media3 = getResult("Mean", 2);
+	media4 = getResult("Mean", 3);
+close();
+
+if(width<height) //if width<height => pared costal a izq o derecha; evaluo solo media1 y media2
+{
+	if(media1>media2){
+		ID_pared = 1;
+	}
+	if(media1<media2){
+		ID_pared = 2;
+	}
+}
+
+if(width>height) //if width>height => pared costal arriba o abajo; evaluo solo media3 y media4
+{
+	if(media3>media4){
+		ID_pared = 3;
+	}
+	if(media3<media4){
+		ID_pared = 4;
+	}
+}
+//print("ID_pared " +ID_pared);
+//limpio RoiManager y Results
+
+roiManager("reset");
+run("Clear Results");
+
+
+//meto dimensiones de la ROI y la distancia entre ellas
+	ancho=getNumber("anchura ROI (mm): ", 0);
+	alto=getNumber("altura ROI (mm): ", 0);
+	distanROIs=getNumber("distancia entre ROIs (mm): ", 0);
+
+//dibujo ROIs y las añado al manager dependiendo de dónde esté la pared costal
+
+makeRectangle(0, 0, width, height);
+roiManager("add");
+
+if(ID_pared == 1) //lateral derecho
+{
+	makeRectangle(width-60/pw-ancho/(2*pw), height/2-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(width-60/pw-ancho/(2*pw), height/2-distanROIs/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(width-60/pw-ancho/(2*pw), height/2+distanROIs/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+}
+else if(ID_pared == 2) //lateral izquierdo
+{
+	makeRectangle(60/pw-ancho/(2*pw), height/2-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(60/pw-ancho/(2*pw), height/2-distanROIs/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(60/pw-ancho/(2*pw), height/2+distanROIs/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+}
+
+else if(ID_pared == 3) //abajo
+{
+	makeRectangle(width/2-ancho/(2*pw), height-60/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(width/2-distanROIs/pw-ancho/(2*pw), height-60/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(width/2+distanROIs/pw-ancho/(2*pw), height-60/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+}
+else if(ID_pared == 4) //arriba
+{
+	makeRectangle(width/2-ancho/(2*pw), 60/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(width/2-distanROIs/pw-ancho/(2*pw), 60/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+
+	makeRectangle(width/2+distanROIs/pw-ancho/(2*pw), 60/ph-alto/(2*ph), ancho/pw, alto/ph);
+	roiManager("add")
+}
+
+roiManager("Measure");
+
+//hago estadistica de los datos
+	media1 = getResult("Mean", 0);
+	media2 = getResult("Mean", 1); //ROI central
+	media3 = getResult("Mean", 2); //ROI lateral1
+	media4 = getResult("Mean", 3); //ROI lateral2
+
+	RSR1 = getResult("Mean", 0)/getResult("StdDev", 0);
+	RSR2 = getResult("Mean", 1)/getResult("StdDev", 1);
+	RSR3 = getResult("Mean", 2)/getResult("StdDev", 2);
+	RSR4 = getResult("Mean", 3)/getResult("StdDev", 3);
+
+	desvM_VMP = 0;
+	desvM_RSR = 0;
+	for (i=2; i<nResults; i++) {
+   		aux1 = abs(getResult("Mean", i)-media2)*100/media2;
+   		aux2 = abs(getResult("Mean", i)/getResult("StdDev", i)-RSR2)*100/RSR2;
+		if(aux1>desvM_VMP){
+		desvM_VMP = aux1;
+		}
+		if(aux2>desvM_RSR){
+		desvM_RSR = aux2;
+		}
+		
+	}
+	aux1 = abs(media3-media4)*100/media4;
+	if(aux1>desvM_VMP){
+		desvM_VMP = aux1;
+	}
+	aux2 = abs(RSR3-RSR4)*100/RSR4;
+	if(aux1>desvM_RSR){
+		desvM_RSR = aux1;
+	}
+	
+//hago tabla con resultados
+ title1 = "Resultado Uniformidad";
+ title2 = "["+title1+"]";
+ f = title2;
+ if (isOpen(title1))
+     print(f, "\\Clear");
+ else
+    run("New... ", "name="+title2+" type=Table width=450 height=300");
+  print(f, "\\Headings:parametro\tvalor");
+  print(f, "VMP central" + "\t" +d2s(media2,2));
+  print(f, "VMP lateral 1" + "\t" +d2s(media3,2));
+  print(f, "VMP lateral 2" + "\t" +d2s(media4,2));
+  print(f, "maxima desviación VMP entre ROIs (%)" + "\t" +d2s(desvM_VMP,2));
+  print(f, "RSR central" + "\t" +d2s(RSR2,2));
+  print(f, "RSR lateral 1" + "\t" +d2s(RSR3,2));
+  print(f, "RSR lateral 2" + "\t" +d2s(RSR4,2));
+  print(f, "maxima desviación RSR entre ROIs (%)" + "\t" +d2s(desvM_RSR,2));
+
+roiManager("Show All");

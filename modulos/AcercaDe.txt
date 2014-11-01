@@ -1,0 +1,3 @@
+open("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\AcercaQCRX.bmp");
+
+

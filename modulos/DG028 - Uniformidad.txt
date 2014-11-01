@@ -1,0 +1,90 @@
+if(roiManager("count")!=0){
+	roiManager("Delete");
+}
+run("Clear Results");
+
+requires("1.32f");
+  title = getTitle;
+  width = getWidth;
+  height = getHeight;
+  depth = nSlices;
+  getPixelSize(unit, pw, ph, pd);
+  path = getDirectory("image");
+  getThreshold(t1, t2); 
+
+
+
+//dibujo ROIs y las añado al manager
+makeRectangle(0, 0, width, height);
+roiManager("add")
+
+makeRectangle(width/2-20/pw, height/2-20/ph, 40/pw, 40/ph);
+roiManager("add")
+
+makeRectangle(width/4-20/pw, height/4-20/ph, 40/pw, 40/ph);
+roiManager("add")
+
+makeRectangle(3*width/4-20/pw, height/4-20/ph, 40/pw, 40/ph);
+roiManager("add")
+
+makeRectangle(width/4-20/pw, 3*height/4-20/ph, 40/pw, 40/ph);
+roiManager("add")
+
+makeRectangle(3*width/4-20/pw, 3*height/4-20/ph, 40/pw, 40/ph);
+roiManager("add")
+
+roiManager("Measure");
+
+
+
+
+//hago estadistica de los datos
+	media1 = getResult("Mean", 0);
+	media2 = getResult("Mean", 1);
+	media3 = getResult("Mean", 2);
+	media4 = getResult("Mean", 3);
+	media5 = getResult("Mean", 4);
+	media6 = getResult("Mean", 5);
+
+	RSR1 = getResult("Mean", 0)/getResult("StdDev", 0);
+	RSR2 = getResult("Mean", 1)/getResult("StdDev", 1);
+	RSR3 = getResult("Mean", 2)/getResult("StdDev", 2);
+	RSR4 = getResult("Mean", 3)/getResult("StdDev", 3);
+	RSR5 = getResult("Mean", 4)/getResult("StdDev", 4);
+	RSR6 = getResult("Mean", 5)/getResult("StdDev", 5);
+
+	VMP_medio = (media2 + media3 + media4 + media5 + media6)/5;
+	RSR_medio = (RSR2 + RSR3 + RSR4 + RSR5 + RSR6)/5;
+	desvM_VMP = 0;
+	desvM_RSR = 0;
+	for (i=1; i<nResults; i++) {
+   		aux1 = abs(getResult("Mean", i)-VMP_medio)*100/VMP_medio;
+		aux2 = abs(getResult("Mean", i)/getResult("StdDev", i)-RSR_medio)*100/RSR_medio;
+		if(aux1>desvM_VMP){
+		desvM_VMP = aux1;
+		}
+		if(aux2>desvM_RSR){
+		desvM_RSR = aux2;
+		}
+	}
+
+//print("media de los VMP de las ROI's= " +VMP_medio);
+//print("media de RSR de las ROI's= " +RSR_medio);
+//print("maxima desviación VMP= " +desvM_VMP);
+//print("maxima desviación RSR= " +desvM_RSR);
+
+//hago tabla con resultados
+ title1 = "Resultado Uniformidad";
+ title2 = "["+title1+"]";
+ f = title2;
+ if (isOpen(title1))
+     print(f, "\\Clear");
+ else
+    run("New... ", "name="+title2+" type=Table width=300 height=250");
+  print(f, "\\Headings:parametro\tvalor");
+  print(f, "media de los VMP de las ROI's" + "\t" +d2s(VMP_medio,2));
+  print(f, "media de RSR de las ROI's" + "\t" +d2s(RSR_medio,2));
+  print(f, "máxima desviación VMP" + "\t" +d2s(desvM_VMP,2));
+  print(f, "máxima desviación RSR" + "\t" +d2s(desvM_RSR,2));
+
+roiManager("Show All");  

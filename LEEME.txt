@@ -1,0 +1,29 @@
+========================================================================
+
+			       QC-RX v2.01
+
+========================================================================
+       MACRO ImageJ para el Control de Calidad en Radiodiagnóstico
+	        basado en el protocolo 2011 (SEFM/SEPR/SERAM)
+========================================================================
+  Desarrollado en el Hospital Clinico Universitario "Lozano Blesa" por:
+		          Jesús Cortés Rodicio
+		       Mª Ángeles Rivas Ballarín
+			   Pedro Ruiz Manzano
+========================================================================
+
+
+
+	Instalación:
+	------------
+
+
+- Copiar la carpeta \QC_RX en la carpeta de macros de ImageJ
+
+- Abrir ImageJ (versión 1.42n o superior)
+
+- Ir a Plugins >> Macro >> Install (Pulsar Ctrl + Shift + M)
+
+- Seleccionar la macro QCRX_v2.01.txt de la carpeta citada anteriormente
+
+- Aparecerá el botón QCRX en la interfaz del ImageJ

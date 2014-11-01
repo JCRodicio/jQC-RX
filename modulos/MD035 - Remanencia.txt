@@ -1,0 +1,83 @@
+run("Copy");
+
+if(roiManager("count")!=0){
+	roiManager("Delete");
+}
+run("Clear Results");
+
+requires("1.32f");
+  title = getTitle;
+  width = getWidth;
+  height = getHeight;
+  depth = nSlices;
+  getPixelSize(unit, pw, ph, pd);
+  path = getDirectory("image");
+  getThreshold(t1, t2); 
+
+
+//placaAl = getNumber("Tamaño de la placa Al (cm^2) : ", 0);
+
+newImage("Untitled", "16-bit Black", width, height, 1);
+selectWindow("Untitled");
+run("Paste");
+run("Set Scale...", "distance=1 known=pw pixel=1 unit=mm");
+run("Invert LUT");
+setAutoThreshold("Default dark");
+run("Convert to Mask");
+//run("Fill Holes");
+
+
+run("Analyze Particles...", "size=7000-13000 circularity=0.00-1.00 show=Nothing clear record add");
+
+  for (i=0; i<nResults-1; i++) {
+      x = getResult('XStart', i);
+      y = getResult('YStart', i);
+      doWand(x,y);
+      roiManager("add");
+  }
+
+close();
+
+roiManager("Select", 0);
+getSelectionBounds(pos_x, pos_y, W, H);
+
+roiManager("Delete");
+
+
+//busco el centro de mi ROI
+Ox=pos_x+W/2;
+Oy=pos_y+H/2;
+
+
+//dibujo ROIs y las añado al manager
+makeRectangle(pos_x+W+5/pw, Oy+5/ph, 20/pw, 20/ph);
+roiManager("add");
+makeRectangle(pos_x+W-5/pw-20/pw, Oy+5/ph, 20/pw, 20/ph);
+roiManager("add");
+makeRectangle(pos_x+W-5/pw-20/pw, Oy-5/ph-20/ph, 20/pw, 20/ph);
+roiManager("add");
+
+roiManager("Measure");
+
+
+
+
+//hago estadistica de los datos
+
+	media1 = getResult("Mean", 0);
+	media2 = getResult("Mean", 1);
+	media3 = getResult("Mean", 2);
+
+	dev1 = getResult("StdDev", 0);
+	dev2 = getResult("StdDev", 1);
+	dev3 = getResult("StdDev", 2);
+
+	FR = abs((media3-media2)/(media1-media2));
+	print("Factor de Remanencia = " +FR);
+	
+if(FR<0.3){
+	print("OK");
+}else{
+	print(">0.3");
+	
+roiManager("Show All");

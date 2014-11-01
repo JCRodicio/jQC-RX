@@ -1,0 +1,191 @@
+if(roiManager("count")!=0){
+	roiManager("reset");
+}
+run("Clear Results");
+
+requires("1.32f");
+  title = getTitle;
+  width = getWidth;
+  height = getHeight;
+  depth = nSlices;
+  getPixelSize(unit, pw, ph, pd);
+  path = getDirectory("image");
+  getThreshold(t1, t2); 
+
+//print("propiedades de la imagen");
+//print(width, height, unit, pw, ph, pd);
+
+//Analizo en una ROI "comprimida" 3cm por cada lado
+makeRectangle(30/pw, 30/ph, width-60/pw, height-60/ph);
+run("Copy");
+
+newImage("Untitled", "16-bit Black", width-60/pw, height-60/ph, 1);
+selectWindow("Untitled");
+run("Paste");
+
+
+run("Set Scale...", "distance=1 known=pw pixel=1 unit=mm");
+run("Invert LUT");
+setAutoThreshold("Default dark");
+run("Convert to Mask");
+//run("Fill Holes");
+
+
+run("Analyze Particles...", "size=100-200 circularity=0.00-1.00 show=Nothing clear record add");
+
+  for (i=0; i<nResults-1; i++)
+  {
+      x = getResult('XStart', i);
+      y = getResult('YStart', i);
+      doWand(x,y);
+      roiManager("add");
+  }
+
+//cierro la imagen de analisis
+close();
+
+
+//y muevo todas las ROIs una distancia conocida
+
+ROIs = roiManager("count");
+if (ROIs==0)
+      exit("The ROI Manager is empty");
+for (i=0; i<ROIs; i++)
+{
+      roiManager('select', i);
+      getSelectionBounds(x, y, w, h);
+      //print("x,y,w,h de la seleccion automatica");
+      //print(x, y, w, h);
+      setSelectionLocation(x+30/pw, y+30/ph);
+      roiManager('update');
+}
+
+
+
+var pos_x = 1;
+var pos_y = 1;
+var W = 1;
+var H = 1;
+
+for (i=0; i<=ROIs-1; i++)
+{
+	roiManager("Select", i);
+	getSelectionBounds(pos_xi, pos_yi, Wi, Hi);
+	//print("x,y,w,h en pixeles");
+	//print(pos_xi, pos_yi, Wi, Hi);
+	pos_xi = pos_xi*pw; //aqui estoy en mm
+	pos_yi = pos_yi*ph;
+	//print("x,y,w,h en mm");
+	//print(pos_xi, pos_yi, Wi, Hi);
+		
+	if(pos_xi>30)
+	{
+		if(pos_yi>60)
+		{
+			pos_x = pos_xi;
+			pos_y = pos_yi;
+			W = Wi;
+			H = Hi;
+		}
+	}
+	pos_x = pos_x/pw;  //aqui estoy en pixeles
+	pos_y = pos_y/ph;
+	//print("x,y,w,h de la ROI desplazada");
+	//print(pos_x, pos_y, W, H);
+}
+
+roiManager("reset");
+run("Clear Results");
+
+
+//busco el centro de mi ROI
+Ox=pos_x+W/2;
+Oy=pos_y+H/2;
+
+//dibujo ROIs y las añado al manager
+makeRectangle(Ox-2.5/pw, Oy-2.5/ph, 5/pw, 5/ph);
+roiManager("add");
+makeRectangle(pos_x-7.5/pw, Oy-2.5/ph, 5/pw, 5/ph);
+roiManager("add");
+makeRectangle(Ox-2.5/pw, pos_y-7.5/ph, 5/pw, 5/ph);
+roiManager("add");
+makeRectangle(pos_x+W+2.5/pw, Oy-2.5/ph, 5/pw, 5/ph);
+roiManager("add");
+makeRectangle(Ox-2.5/pw, pos_y+H+2.5/ph, 5/pw, 5/ph);
+roiManager("add");
+roiManager("Measure");
+
+
+
+
+//hago estadistica de los datos
+
+var linealiza="si/no";
+linealiza=getString("¿Desea linealizar?", linealiza);
+if(linealiza=="si"){
+	a=getNumber("parámetro a (pendiente del ajuste Ln): ", 0);
+	b=getNumber("parámetro b (ordenada en el origen): ", 0);
+
+	media1 = exp((getResult("Mean", 0)-b)/a);
+	media2 = exp((getResult("Mean", 1)-b)/a);
+	media3 = exp((getResult("Mean", 2)-b)/a);
+	media4 = exp((getResult("Mean", 3)-b)/a);
+	media5 = exp((getResult("Mean", 4)-b)/a);
+
+	dev1 = getResult("StdDev", 0)*media1/a;
+	dev2 = getResult("StdDev", 1)*media2/a;
+	dev3 = getResult("StdDev", 2)*media3/a;
+	dev4 = getResult("StdDev", 3)*media4/a;
+	dev5 = getResult("StdDev", 4)*media5/a;
+
+	VMPf = (media2 + media3 + media4 + media5)/4;
+	DTPf = (dev2 + dev3 + dev4 + dev5)/4;
+	RCR = abs(media1 - VMPf)/sqrt((dev1*dev1 + DTPf*DTPf)/2);
+	RSRf =VMPf/DTPf;
+	RSRAl = media1/dev1;
+	
+	print("linealizar: " +linealiza);
+	print("VMP_Al = " +d2s(media1,2));
+	print("DTP_Al = " +d2s(dev1,2));
+	print("RSR_Al = " +d2s(RSRAl,2));
+	print("---------------------");
+	print("VMP_fondo = " +d2s(VMPf,2));
+	print("DTP_fondo = " +d2s(DTPf,2));
+	print("RSR_fondo = " +d2s(RSRf,2));
+	print("---------------------");
+	print("RCR = " +d2s(RCR,2));
+
+} else {
+
+	media1 = getResult("Mean", 0);
+	media2 = getResult("Mean", 1);
+	media3 = getResult("Mean", 2);
+	media4 = getResult("Mean", 3);
+	media5 = getResult("Mean", 4);
+
+	dev1 = getResult("StdDev", 0);
+	dev2 = getResult("StdDev", 1);
+	dev3 = getResult("StdDev", 2);
+	dev4 = getResult("StdDev", 3);
+	dev5 = getResult("StdDev", 4);
+
+	VMPf = (media2 + media3 + media4 + media5)/4;
+	DTPf = (dev2 + dev3 + dev4 + dev5)/4;
+	RCR = abs(media1 - VMPf)/sqrt((dev1*dev1 + DTPf*DTPf)/2);
+	RSRf =VMPf/DTPf;
+	RSRAl = media1/dev1;
+	
+	print("linealizar: " +linealiza);
+	print("VMP_Al = " +d2s(media1,2));
+	print("DTP_Al = " +d2s(dev1,2));
+	print("RSR_Al = " +d2s(RSRAl,2));
+	print("---------------------");
+	print("VMP_fondo = " +d2s(VMPf,2));
+	print("DTP_fondo = " +d2s(DTPf,2));
+	print("RSR_fondo = " +d2s(RSRf,2));
+	print("---------------------");
+	print("RCR = " +d2s(RCR,2));
+}
+roiManager("Show All");
+
+

@@ -1,0 +1,63 @@
+requires("1.42n");
+
+
+var sCmds = newMenu("QCRX Menu Tool",
+newArray("DG028. Uniformidad", "MD016. Compensacion Mamógrafo", "MD024. Uniformidad Mamógrafo", "MD025. Constancia Uniformidad", "MD035. Remanencia", "-", "...Acerca de QCRX..."));
+macro "QCRX Menu Tool - T0711Q T8711C T0f11R T8f11X" {
+cmd = getArgument();
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+if (cmd=="DG028. Uniformidad") 
+{
+runMacro("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\modulos\\DG028 - Uniformidad.txt");
+
+	exit
+}
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+if (cmd=="MD016. Compensacion Mamógrafo") 
+{
+runMacro("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\modulos\\MD016 - Compensacion.txt");
+	exit
+}
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+if (cmd=="MD024. Uniformidad Mamógrafo") 
+{
+runMacro("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\modulos\\MD024 - Uniformidad Mamo.txt");
+	exit
+}
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+if (cmd=="MD025. Constancia Uniformidad") 
+{
+runMacro("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\modulos\\MD025 - Constancia Uniformidad Mamo.txt");
+	exit
+}
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+if (cmd=="MD035. Remanencia") 
+{
+runMacro("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\modulos\\MD035 - Remanencia.txt");
+	exit
+}
+
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+if (cmd=="...Acerca de QCRX...") 
+{
+runMacro("C:\\Archivos de programa\\ImageJ\\macros\\QC_RX\\modulos\\AcercaDe.txt");
+	exit
+}
+
+
+if(cmd!="-") {
+run(cmd);
+}
+}
